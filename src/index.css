@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Kaydırma çubuğu stilleri */
+body {
+    background-color: #121212;
+}
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #181818;
+}
+::-webkit-scrollbar-thumb {
+    background: #535353;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #737373;
+}
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0; transform: translateY(20px); }
+  10%, 90% { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-out {
+  animation: fadeInOut 2s ease-in-out forwards;
+}
