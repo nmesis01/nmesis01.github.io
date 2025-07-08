@@ -1,4 +1,4 @@
-// src/components/Player.js (react-swipeable ile güncellendi)
+// src/components/Player.js (Swipe ve Buton sorunları düzeltildi)
 
 import React from 'react';
 import { useSwipeable } from 'react-swipeable'; // Kütüphaneden hook'u import et
@@ -37,9 +37,10 @@ function Player({
     // DÜZELTME: Artık hem mini hem de genişletilmiş player'da çalışıyor
     onSwipedLeft: () => onNext(),
     onSwipedRight: () => onPrev(),
-    // DÜZELTME: onTap sadece mini player'da çalışacak
-    onTap: () => {
-        if (!isPlayerExpanded) {
+    // DÜZELTME: onTap sadece mini player'da ve butona basılmadığında çalışacak
+    onTap: ({ event }) => {
+        // Eğer tıklanan element veya onun bir üst elementi button değilse, player'ı genişlet.
+        if (!isPlayerExpanded && !event.target.closest('button')) {
             handleToggleExpand();
         }
     },
@@ -95,7 +96,7 @@ function Player({
                 <p className="text-xs text-spotify-lightgray truncate">{currentSong.artist}</p>
               </div>
             </div>
-            <button onClick={(e) => { e.stopPropagation(); onPlayPause(); }} className="text-white p-2">
+            <button onClick={onPlayPause} className="text-white p-2">
               {isPlaying ? (
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"></path></svg>
               ) : (
