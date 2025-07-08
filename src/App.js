@@ -10,7 +10,7 @@ import SearchPage from './components/SearchPage';
 import QueuePage from './components/QueuePage';
 import Notification from './components/Notification';
 import BottomNav from './components/BottomNav';
-
+import NotFoundPage from './components/NotFoundPage'; // YENİ IMPORT
 function App() {
   // --- STATE HOOKS ---
   const [albums, setAlbums] = useState([]);
@@ -30,7 +30,8 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const activePage = location.pathname.split('/')[1] || 'home';
-
+  // YENİ: Ana içerik alanının referansını tutmak için ref
+  const mainContentRef = useRef(null);
   // --- DATA & STATE PERSISTENCE ---
   useEffect(() => {
     const fetchAlbums = async () => {
@@ -46,6 +47,12 @@ function App() {
     fetchAlbums();
   }, []);
 
+    // YENİ: Sayfa (route) değiştiğinde scroll'u başa al
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
   const allSongs = albums.flatMap(album => album.songs ? album.songs.map(song => ({ ...song, album })) : []);
 
   useEffect(() => { localStorage.setItem('currentSong', JSON.stringify(currentSong)); }, [currentSong]);
@@ -249,12 +256,13 @@ function App() {
       <div className="flex-grow flex overflow-hidden">
         <Sidebar onPageChange={handlePageChange} activePage={activePage} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <main className="flex-1 overflow-y-auto bg-spotify-dark p-4 md:rounded-lg md:m-2 md:p-6 pb-40 md:pb-6">
+          <main ref={mainContentRef} className="flex-1 overflow-y-auto bg-spotify-dark p-4 md:rounded-lg md:m-2 md:p-6 pb-40 md:pb-6">
             <Routes>
               <Route path="/" element={<HomePage albums={albums} onAlbumSelect={(id) => navigate(`/album/${id}`)} />} />
               <Route path="/album/:albumId" element={<AlbumPage albums={albums} onPlaySong={handlePlayFromAlbum} currentSong={currentSong} onAddToQueue={handleAddToQueue} />} />
               <Route path="/search" element={<SearchPage allSongs={allSongs} onPlaySong={handlePlayFromRandom} currentSong={currentSong} onAddToQueue={handleAddToQueue} />} />
               <Route path="/queue" element={<QueuePage queue={displayQueue} currentSong={currentSong} onPlaySong={handlePlayFromQueue} />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
         </div>

@@ -8,7 +8,7 @@ function HomePage({ albums, onAlbumSelect }) {
     
     if (currentHour < 12 && currentHour > 5) {
       return "Günaydın";
-    } else if (currentHour < 18 && currentHour > 12) {
+    } else if (currentHour < 18 && currentHour >= 12) {
       return "İyi Günler";
     } else if (currentHour > 22 || currentHour < 5){
       return "İyi Geceler";
