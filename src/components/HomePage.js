@@ -23,7 +23,7 @@ function HomePage({ albums, onAlbumSelect }) {
     <div>
       {/* Statik başlık yerine getGreeting() fonksiyonunu çağırıyoruz */}
       <h1 className="text-3xl font-bold mb-6">{getGreeting()}</h1>
-            <h2 className="text-spotify-lightgray text-sm font-semibold mt-1 mb-6">ODTÜ Faşizme Mezar Olacak</h2>
+            <h2 className="text-spotify-lightgray text-sm font-semibold mt-1 mb-6">Faşizme Ölüm Halka Hürriyet</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
         {albums.map(album => (
           <div 
