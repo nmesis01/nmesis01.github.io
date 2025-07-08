@@ -1,4 +1,4 @@
-// src/App.js (Safari titreme sorunu giderildi)
+// src/App.js (Safari için MP3 Fallback ve Stabilizasyon)
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
@@ -148,7 +148,7 @@ function App() {
         showNotification('Sıraya Eklendi');
         return newQueue;
       }
-      showNotification('Sıranın sonuna eklendi');
+      showNotification('Sıraya Eklendi');
       return [...prevQueue, newUserSong];
     });
   }, [currentSong]);
@@ -165,9 +165,22 @@ function App() {
     const onEnded = () => handleNextSong();
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('ended', onEnded);
-    if (currentSong && audio.src !== currentSong.audio_url) {
-        audio.src = currentSong.audio_url;
+    
+    if (currentSong) {
+      let audioUrl = currentSong.audio_url;
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+      // Sadece Safari ise VE dosya .opus ise .mp3'e çevir
+      if (isSafari && audioUrl && audioUrl.endsWith('.opus')) {
+        audioUrl = audioUrl.replace(/\.opus$/, '.mp3');
+      }
+      
+      if (audio.src !== audioUrl) {
+        audio.src = audioUrl;
+        audio.load(); // Tarayıcıyı yeni kaynağı analiz etmeye zorla
+      }
     }
+
     if (isPlaying) {
       audio.play().catch(e => console.error("Oynatma hatası:", e));
     } else {
@@ -182,25 +195,25 @@ function App() {
   useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume]);
 
   // --- MEDIA SESSION API (AYRIŞTIRILDI) ---
-// 1. MediaMetadata sadece şarkı değişince
-useEffect(() => {
-  if (!currentSong || !('mediaSession' in navigator)) return;
-  navigator.mediaSession.metadata = new window.MediaMetadata({
-    title: currentSong.title,
-    artist: currentSong.artist,
-    album: currentSong.album.title,
-    artwork: [{ src: currentSong.cover_url, sizes: '512x512', type: 'image/jpeg' }]
-  });
-}, [currentSong]);
+  // 1. MediaMetadata sadece şarkı değişince
+  useEffect(() => {
+    if (!currentSong || !('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new window.MediaMetadata({
+      title: currentSong.title,
+      artist: currentSong.artist,
+      album: currentSong.album.title,
+      artwork: [{ src: currentSong.cover_url, sizes: '512x512', type: 'image/jpeg' }]
+    });
+  }, [currentSong]);
 
-// 2. Action handler'ları fonksiyon referansları değiştikçe tekrar set et!
-useEffect(() => {
-  if (!('mediaSession' in navigator)) return;
-  navigator.mediaSession.setActionHandler('play', togglePlayPause);
-  navigator.mediaSession.setActionHandler('pause', togglePlayPause);
-  navigator.mediaSession.setActionHandler('previoustrack', handlePrevSong);
-  navigator.mediaSession.setActionHandler('nexttrack', handleNextSong);
-}, [togglePlayPause, handlePrevSong, handleNextSong]);
+  // 2. Action handler'ları fonksiyon referansları değiştikçe tekrar set et!
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.setActionHandler('play', togglePlayPause);
+    navigator.mediaSession.setActionHandler('pause', togglePlayPause);
+    navigator.mediaSession.setActionHandler('previoustrack', handlePrevSong);
+    navigator.mediaSession.setActionHandler('nexttrack', handleNextSong);
+  }, [togglePlayPause, handlePrevSong, handleNextSong]);
 
 
   const displayQueue = currentSong ? [currentSong, ...currentQueue] : currentQueue;
