@@ -9,7 +9,7 @@ function SearchPage({ allSongs = [], onPlaySong, currentSong, onAddToQueue }) {
     const [isLoading, setIsLoading] = useState(false);
     const [openMenuId, setOpenMenuId] = useState(null);
 
-    const defaultSongTitles = [ 'Sevda Turkusu', 'Siyrilip Gelen', 'Hakliyiz Kazanacagiz', 'Cemo', 'Guleycan', 'Gel ki Safaklar Tutussun', 'Avusturya Isci Marsi', 'Haziranda Olmek Zor', 'Devrim Yuruyusumuz Suruyor' ];
+    const defaultSongTitles = [ 'Sevda Türküsü', 'Sıyrılıp Gelen', 'Haklıyız Kazanacağız', 'Cemo', 'Güleycan', 'Gel ki Şafaklar Tutuşsun', 'Avusturya İşçi Marşı', 'Haziranda Ölmek Zor', 'Devrim Yürüyüşümüz Sürüyor', 'Partizan', 'Dağlara Gel'];
     const defaultSongs = useMemo(() => {
         return defaultSongTitles.map(title => allSongs.find(song => song.title === title)).filter(Boolean);
     }, [allSongs]);
@@ -21,7 +21,7 @@ function SearchPage({ allSongs = [], onPlaySong, currentSong, onAddToQueue }) {
         }
         const debounceTimer = setTimeout(() => {
             setIsLoading(true);
-            fetch(`http://localhost:5001/api/search?q=${searchTerm}`)
+            fetch(`https://nodebackend-production-f8c4.up.railway.app/api/search?q=${searchTerm}`)
                 .then(res => res.json())
                 .then(data => { setResults(data); setIsLoading(false); })
                 .catch(err => { console.error("Arama hatası:", err); setIsLoading(false); });

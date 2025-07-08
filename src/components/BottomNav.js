@@ -9,7 +9,7 @@ function BottomNav({ onPageChange, activePage }) {
     ];
 
     return (
-        <nav className="md:hidden bg-gradient-to-t from-black via-black to-spotify-dark p-2 pb-4">
+        <nav className="md:hidden fixed bottom-0 w-full bg-spotify-lightdark p-2 pb-1 border-t border-black/50">
             <div className="flex justify-around items-center">
                 {navItems.map(item => (
                     <button 
