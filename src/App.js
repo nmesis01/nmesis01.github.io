@@ -1,4 +1,4 @@
-// src/App.js (Media Session API hataları giderilmiş nihai sürüm)
+// src/App.js (Safari titreme sorunu giderildi)
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
@@ -10,7 +10,8 @@ import SearchPage from './components/SearchPage';
 import QueuePage from './components/QueuePage';
 import Notification from './components/Notification';
 import BottomNav from './components/BottomNav';
-import NotFoundPage from './components/NotFoundPage'; // YENİ IMPORT
+import NotFoundPage from './components/NotFoundPage';
+
 function App() {
   // --- STATE HOOKS ---
   const [albums, setAlbums] = useState([]);
@@ -30,8 +31,8 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const activePage = location.pathname.split('/')[1] || 'home';
-  // YENİ: Ana içerik alanının referansını tutmak için ref
   const mainContentRef = useRef(null);
+
   // --- DATA & STATE PERSISTENCE ---
   useEffect(() => {
     const fetchAlbums = async () => {
@@ -47,33 +48,30 @@ function App() {
     fetchAlbums();
   }, []);
 
-    // YENİ: Sayfa (route) değiştiğinde scroll'u başa al
   useEffect(() => {
     if (mainContentRef.current) {
       mainContentRef.current.scrollTop = 0;
     }
   }, [location.pathname]);
+
   const allSongs = albums.flatMap(album => album.songs ? album.songs.map(song => ({ ...song, album })) : []);
 
   useEffect(() => { localStorage.setItem('currentSong', JSON.stringify(currentSong)); }, [currentSong]);
   useEffect(() => { localStorage.setItem('musicQueue', JSON.stringify(currentQueue)); }, [currentQueue]);
   useEffect(() => { localStorage.setItem('volume', volume); }, [volume]);
 
-  // --- HELPER FUNCTIONS ---
+  // --- HELPER & SONG CONTROL FUNCTIONS ---
   const showNotification = (message) => {
     setNotification(message);
     setTimeout(() => setNotification(''), 2000);
   };
   const handlePageChange = (page) => navigate(page === 'home' ? '/' : `/${page}`);
-
-  // --- SONG CONTROL LOGIC (MEMOIZED) ---
   const handleRestartSong = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
       if(!isPlaying) setIsPlaying(true);
     }
   }, [isPlaying]);
-
   const playNewSong = useCallback((song, queue = []) => {
     if (currentSong && currentSong.id !== song.id) {
       setPlayHistory(prev => [currentSong, ...prev]);
@@ -82,7 +80,6 @@ function App() {
     setCurrentQueue(queue);
     setIsPlaying(true);
   }, [currentSong]);
-
   const handleNextSong = useCallback(() => {
     if (repeatMode === 'one' && currentSong) {
       handleRestartSong();
@@ -101,7 +98,6 @@ function App() {
       }
     }
   }, [currentQueue, repeatMode, currentSong, allSongs, playNewSong, handleRestartSong]);
-  
   const handlePrevSong = useCallback(() => {
     if (audioRef.current && audioRef.current.currentTime > 3) {
       handleRestartSong();
@@ -117,20 +113,17 @@ function App() {
     setCurrentSong(prevSong);
     setIsPlaying(true);
   }, [playHistory, currentSong, handleRestartSong]);
-
   const handlePlayFromAlbum = useCallback((song, album) => {
     const songIndex = album.songs.findIndex(s => s.id === song.id);
     const albumQueue = album.songs.slice(songIndex + 1).map(s => ({ ...s, source: 'system', album }));
     setPlayHistory([]);
     playNewSong({ ...song, source: 'system', album }, albumQueue);
   }, [playNewSong]);
-  
   const handlePlayFromRandom = useCallback((song) => {
     const randomQueue = allSongs.filter(s => s.id !== song.id).sort(() => 0.5 - Math.random()).slice(0, 5).map(s => ({ ...s, source: 'system' }));
     setPlayHistory([]);
     playNewSong({ ...song, source: 'system' }, randomQueue);
   }, [playNewSong, allSongs]);
-
   const handlePlayFromQueue = useCallback((songToPlay) => {
     if (currentSong?.id === songToPlay.id) {
       handleRestartSong();
@@ -141,7 +134,6 @@ function App() {
       playNewSong(songToPlay, currentQueue.slice(songIndex + 1));
     }
   }, [currentSong, currentQueue, playNewSong, handleRestartSong]);
-  
   const handleAddToQueue = useCallback((songToAdd) => {
     setCurrentQueue(prevQueue => {
       if (prevQueue.some(song => song.id === songToAdd.id) || currentSong?.id === songToAdd.id) {
@@ -160,89 +152,56 @@ function App() {
       return [...prevQueue, newUserSong];
     });
   }, [currentSong]);
-  
-  const togglePlayPause = useCallback(() => {
-    if (currentSong) setIsPlaying(prev => !prev);
-  }, [currentSong]);
-  
-  const handleVolumeChange = (e) => {
-    setVolume(e.target.value);
-  };
-  
+  const togglePlayPause = useCallback(() => { if (currentSong) setIsPlaying(prev => !prev); }, [currentSong]);
+  const handleVolumeChange = (e) => { setVolume(e.target.value); };
   const handleToggleShuffle = useCallback(() => setIsShuffleOn(prev => !prev), []);
-  const handleToggleRepeat = useCallback(() => {
-    setRepeatMode(prev => (prev === 'off' ? 'all' : prev === 'all' ? 'one' : 'off'));
-  }, []);
+  const handleToggleRepeat = useCallback(() => { setRepeatMode(prev => (prev === 'off' ? 'all' : prev === 'all' ? 'one' : 'off')); }, []);
 
-  // --- AUDIO ELEMENT & MEDIA SESSION EFFECTS ---
+  // --- AUDIO ELEMENT EFFECT ---
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    
-    const onTimeUpdate = () => {
-      setSongProgress({ currentTime: audio.currentTime, duration: audio.duration });
-      
-      // Media Session pozisyonunu doğrudan burada güncelle
-      if ('mediaSession' in navigator && navigator.mediaSession.metadata) {
-        navigator.mediaSession.setPositionState({
-          duration: audio.duration || 0,
-          position: audio.currentTime || 0,
-        });
-      }
-    };
-    
+    const onTimeUpdate = () => setSongProgress({ currentTime: audio.currentTime, duration: audio.duration });
     const onEnded = () => handleNextSong();
-
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('ended', onEnded);
-
     if (currentSong && audio.src !== currentSong.audio_url) {
         audio.src = currentSong.audio_url;
-        setSongProgress({ currentTime: 0, duration: 0 }); 
     }
-    
     if (isPlaying) {
-      audio.play().catch(() => setIsPlaying(false));
+      audio.play().catch(e => console.error("Oynatma hatası:", e));
     } else {
       audio.pause();
     }
-    
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('ended', onEnded);
     };
   }, [currentSong, isPlaying, handleNextSong]);
 
-  useEffect(() => { 
-    if (audioRef.current) audioRef.current.volume = volume; 
-  }, [volume]);
-  
-  // Media Session - Sadece metadata ve eylemleri ayarlar
-  useEffect(() => {
-    if (!('mediaSession' in navigator)) return;
+  useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume]);
 
-    if (currentSong) {
-      navigator.mediaSession.metadata = new window.MediaMetadata({
-        title: currentSong.title,
-        artist: currentSong.artist,
-        album: currentSong.album.title,
-        artwork: [{ src: currentSong.cover_url, sizes: '512x512', type: 'image/jpeg' }]
-      });
+  // --- MEDIA SESSION API (AYRIŞTIRILDI) ---
+// 1. MediaMetadata sadece şarkı değişince
+useEffect(() => {
+  if (!currentSong || !('mediaSession' in navigator)) return;
+  navigator.mediaSession.metadata = new window.MediaMetadata({
+    title: currentSong.title,
+    artist: currentSong.artist,
+    album: currentSong.album.title,
+    artwork: [{ src: currentSong.cover_url, sizes: '512x512', type: 'image/jpeg' }]
+  });
+}, [currentSong]);
 
-      navigator.mediaSession.setActionHandler('play', togglePlayPause);
-      navigator.mediaSession.setActionHandler('pause', togglePlayPause);
-      navigator.mediaSession.setActionHandler('previoustrack', handlePrevSong);
-      navigator.mediaSession.setActionHandler('nexttrack', handleNextSong);
-    } else {
-      navigator.mediaSession.metadata = null;
-    }
-  }, [currentSong, togglePlayPause, handlePrevSong, handleNextSong]);
-  
-  // Media Session - Sadece oynatma durumunu ayarlar
-  useEffect(() => {
-    if (!('mediaSession' in navigator)) return;
-    navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
-  }, [isPlaying]);
+// 2. Action handler'ları fonksiyon referansları değiştikçe tekrar set et!
+useEffect(() => {
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.setActionHandler('play', togglePlayPause);
+  navigator.mediaSession.setActionHandler('pause', togglePlayPause);
+  navigator.mediaSession.setActionHandler('previoustrack', handlePrevSong);
+  navigator.mediaSession.setActionHandler('nexttrack', handleNextSong);
+}, [togglePlayPause, handlePrevSong, handleNextSong]);
+
 
   const displayQueue = currentSong ? [currentSong, ...currentQueue] : currentQueue;
 

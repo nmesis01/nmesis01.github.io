@@ -1,4 +1,4 @@
-// src/components/Player.js (Swipe ve Genişletme sorunu düzeltildi)
+// src/components/Player.js (react-swipeable ile güncellendi)
 
 import React from 'react';
 import { useSwipeable } from 'react-swipeable'; // Kütüphaneden hook'u import et
@@ -32,10 +32,17 @@ function Player({
     }
   };
   
-  // --- react-swipeable hook'u (Sadece kaydırma için) ---
+  // --- react-swipeable hook'u ile olay yöneticilerini tanımla ---
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => !isPlayerExpanded && onNext(),
-    onSwipedRight: () => !isPlayerExpanded && onPrev(),
+    // DÜZELTME: Artık hem mini hem de genişletilmiş player'da çalışıyor
+    onSwipedLeft: () => onNext(),
+    onSwipedRight: () => onPrev(),
+    // DÜZELTME: onTap sadece mini player'da çalışacak
+    onTap: () => {
+        if (!isPlayerExpanded) {
+            handleToggleExpand();
+        }
+    },
     preventScrollOnSwipe: true,
     trackMouse: true
   });
@@ -73,11 +80,11 @@ function Player({
       {/* ==================================================================== */}
       {/* MOBİL PLAYER (Genişletilebilir) */}
       {/* ==================================================================== */}
-      <div className={mobilePlayerClasses}>
+      {/* Olay yöneticileri {...swipeHandlers} olarak ana kapsayıcıya eklendi */}
+      <div {...swipeHandlers} className={mobilePlayerClasses}>
         {/* --- Mini Player --- */}
         {!isPlayerExpanded && (
-          // DÜZELTME: Kapsayıcıya onClick ve kaydırma olaylarını ekliyoruz
-           <div {...swipeHandlers} className="h-full flex items-center justify-between px-4 cursor-pointer" onClick={handleToggleExpand}>
+           <div className="h-full flex items-center justify-between px-4 cursor-pointer">
             <div className="absolute top-0 left-0 right-0 h-1 bg-spotify-lightdark/50">
               <div className="h-1 bg-white" style={{ width: `${progressPercentage}%` }}></div>
             </div>
@@ -88,13 +95,7 @@ function Player({
                 <p className="text-xs text-spotify-lightgray truncate">{currentSong.artist}</p>
               </div>
             </div>
-            <button 
-              onClick={(e) => { 
-                e.stopPropagation(); // Tıklamanın player'ı genişletmesini engelle
-                onPlayPause(); 
-              }} 
-              className="text-white p-2"
-            >
+            <button onClick={(e) => { e.stopPropagation(); onPlayPause(); }} className="text-white p-2">
               {isPlaying ? (
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"></path></svg>
               ) : (
