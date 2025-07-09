@@ -302,7 +302,7 @@ function App() {
   const displayQueue = useMemo(() => (currentSong ? [currentSong, ...currentQueue] : currentQueue), [currentSong, currentQueue]);
 
   if (loading) {
-    return <div className="bg-black h-screen flex items-center justify-center text-white text-xl">Veritabanına bağlanılıyor...</div>;
+    return <div className="bg-black h-screen flex items-center justify-center text-white text-xl">Grup Yorum Halktır Susturulamaz</div>;
   }
 
   return (
