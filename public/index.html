@@ -31,10 +31,8 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <script type="text/javascript">
-      // Hafızadaki yönlendirme yolunu kontrol et.
       var redirect = sessionStorage.redirect;
       delete sessionStorage.redirect;
-      // Eğer bir yönlendirme yolu varsa, URL'yi sayfa yenilemeden güncelle.
       if (redirect && redirect != location.pathname) {
         history.replaceState(null, null, redirect);
       }

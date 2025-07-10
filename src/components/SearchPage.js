@@ -1,6 +1,4 @@
-// -----------------------------------------------------------------------------
-// src/components/SearchPage.js (Mobil Uyumlu Liste)
-// -----------------------------------------------------------------------------
+// src/components/SearchPage.js
 import { useState, useEffect, useMemo } from 'react';
 
 function SearchPage({ allSongs = [], onPlaySong, currentSong, onAddToQueue }) {

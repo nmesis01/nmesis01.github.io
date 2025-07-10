@@ -11,7 +11,6 @@ import BottomNav from './components/BottomNav';
 import NotFoundPage from './components/NotFoundPage';
 
 function App() {
-  // State hooks
   const [albums, setAlbums] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentQueue, setCurrentQueue] = useState(() => JSON.parse(localStorage.getItem('musicQueue')) || []);
@@ -35,7 +34,6 @@ function App() {
   const isIntentionalPause = useRef(false);
   const isTransitioning = useRef(false);
 
-  // Data & state persistence
   useEffect(() => {
     let cancelled = false;
     const fetchAlbums = async () => {
@@ -67,14 +65,12 @@ function App() {
   useEffect(() => { localStorage.setItem('musicQueue', JSON.stringify(currentQueue)); }, [currentQueue]);
   useEffect(() => { localStorage.setItem('volume', volume); }, [volume]);
 
-  // Notification timeout cleanup
   useEffect(() => {
     if (!notification) return;
     const timeout = setTimeout(() => setNotification(''), 2000);
     return () => clearTimeout(timeout);
   }, [notification]);
 
-  // Helper & song control functions (memoize to prevent re-renders)
   const showNotification = useCallback((message) => {
     setNotification(message);
   }, []);
@@ -176,7 +172,6 @@ function App() {
     });
   }, [currentSong, showNotification]);
 
-  // Sadece user interaction ile play
   const togglePlayPause = useCallback(() => {
     if (currentSong) {
       setHasAudioFocus(true);
@@ -196,7 +191,6 @@ function App() {
     setRepeatMode(prev => (prev === 'off' ? 'all' : prev === 'all' ? 'one' : 'off'));
   }, []);
 
-  // MEDIA SESSION API: USER INTERACTION KONTROLÜYLE
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -232,7 +226,6 @@ function App() {
     };
   }, [currentSong, handlePrevSong, handleNextSong]);
 
-  // AUDIO EVENTLERİ: userInteracted ile loop engeli, ended/pause'da flag reset!
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -262,7 +255,6 @@ function App() {
     audio.addEventListener('pause', onPause);
     audio.addEventListener('play', onPlay);
 
-    // src değişince sıfırla
     if (currentSong) {
       let audioUrl = currentSong.audio_url;
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -276,7 +268,6 @@ function App() {
       }
     }
 
-    // Sadece userInteracted varsa ve audio.paused ise play()
     if (isPlaying && userInteracted && audio.paused) {
       audio.play().catch(() => {
         setIsPlaying(false);
@@ -298,7 +289,6 @@ function App() {
 
   useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume]);
 
-  // displayQueue memozied
   const displayQueue = useMemo(() => (currentSong ? [currentSong, ...currentQueue] : currentQueue), [currentSong, currentQueue]);
 
   if (loading) {

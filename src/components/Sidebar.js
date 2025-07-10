@@ -1,6 +1,4 @@
-// -----------------------------------------------------------------------------
-// src/components/Sidebar.js (Sadece büyük ekranlar için)
-// -----------------------------------------------------------------------------
+// src/components/Sidebar.js
 function Sidebar({ onPageChange, activePage }) {
     return (
         <aside className="hidden md:flex w-72 flex-shrink-0 flex-col gap-2 p-2">

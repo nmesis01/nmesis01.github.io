@@ -1,7 +1,7 @@
-// src/components/Player.js (Swipe ve Buton sorunları düzeltildi)
+// src/components/Player.js
 
 import React from 'react';
-import { useSwipeable } from 'react-swipeable'; // Kütüphaneden hook'u import et
+import { useSwipeable } from 'react-swipeable';
 
 function Player({
   isPlayerExpanded, setIsPlayerExpanded, currentSong, isPlaying, onPlayPause, onNext, onPrev, progress,
@@ -9,7 +9,6 @@ function Player({
   onToggleShuffle, onToggleRepeat, onViewQueue
 }) {
 
-  // --- Yardımcı Fonksiyonlar ---
   const formatTime = (timeInSeconds) => {
     if (isNaN(timeInSeconds) || timeInSeconds === 0) return "0:00";
     const minutes = Math.floor(timeInSeconds / 60);
@@ -32,14 +31,10 @@ function Player({
     }
   };
   
-  // --- react-swipeable hook'u ile olay yöneticilerini tanımla ---
   const swipeHandlers = useSwipeable({
-    // DÜZELTME: Artık hem mini hem de genişletilmiş player'da çalışıyor
     onSwipedLeft: () => onNext(),
     onSwipedRight: () => onPrev(),
-    // DÜZELTME: onTap sadece mini player'da ve butona basılmadığında çalışacak
     onTap: ({ event }) => {
-        // Eğer tıklanan element veya onun bir üst elementi button değilse, player'ı genişlet.
         if (!isPlayerExpanded && !event.target.closest('button')) {
             handleToggleExpand();
         }
@@ -54,7 +49,6 @@ function Player({
     return null; 
   }
 
-  // --- Dinamik CSS Sınıfları ---
   const mobilePlayerClasses = `
     md:hidden fixed left-0 right-0 z-50 transition-all duration-300 ease-in-out
     ${isPlayerExpanded ? 'top-0 bottom-0 bg-gradient-to-b from-spotify-gray to-spotify-dark rounded-none' : 'bottom-16 h-16 bg-spotify-gray rounded-t-lg'}

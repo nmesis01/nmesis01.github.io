@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Kaydırma çubuğu stilleri */
 body {
     background-color: #121212;
 }

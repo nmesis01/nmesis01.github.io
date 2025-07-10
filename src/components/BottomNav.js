@@ -1,6 +1,4 @@
-// -----------------------------------------------------------------------------
 // src/components/BottomNav.js (YENİ DOSYA)
-// -----------------------------------------------------------------------------
 function BottomNav({ onPageChange, activePage }) {
     const navItems = [
         { id: 'home', label: 'Ana Sayfa', icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.09954L3 9.7947V21H9V14H15V21H21V9.7947L12 2.09954ZM12 4.22554L19 10.1557V19H17V12H7V19H5V10.1557L12 4.22554Z"></path></svg> },
