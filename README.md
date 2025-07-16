@@ -1,7 +1,5 @@
 # nmesis01.github.io
-Live:
-spotiyorum.me
-
+<a href="https://spotiyorum.me"> Live </a>
 ## Kurulum
 
 1. Repoyu klonlayın:
