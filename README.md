@@ -1,17 +1,6 @@
 # nmesis01.github.io
-
-Spotiyorum
-## İçerik
-
-- **JavaScript** (%93.3)
-- **HTML** (%4.6)
-- **CSS** (%2.1)
-
-## Özellikler
-
-- Modern ve dinamik arayüz
-- Mobil uyumlu (responsive) tasarım
-- Kolay özelleştirilebilir yapı
+Live:
+spotiyorum.me
 
 ## Kurulum
 
