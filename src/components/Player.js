@@ -31,6 +31,7 @@ function Player({
     }
   };
   
+  // Orijinal swipe handler'ı koruyoruz. Tüm mobil player'a uygulanacak.
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => onNext(),
     onSwipedRight: () => onPrev(),
@@ -75,20 +76,19 @@ function Player({
       {/* ==================================================================== */}
       {/* MOBİL PLAYER (Genişletilebilir) */}
       {/* ==================================================================== */}
-      {/* Olay yöneticileri {...swipeHandlers} olarak ana kapsayıcıya eklendi */}
       <div {...swipeHandlers} className={mobilePlayerClasses}>
-        {/* --- Mini Player --- */}
+        {/* --- Mini Player (Tüm olaylar burada aktif) --- */}
         {!isPlayerExpanded && (
            <div className="h-full flex items-center justify-between px-4 cursor-pointer">
             <div className="absolute top-0 left-0 right-0 h-1 bg-spotify-lightdark/50">
               <div className="h-1 bg-white" style={{ width: `${progressPercentage}%` }}></div>
             </div>
-            <div className="flex items-center gap-3 truncate">
-              <img src={currentSong.cover_url} className="w-10 h-10 rounded" alt={currentSong.title} />
-              <div className="truncate">
-                <p className="font-semibold text-sm text-white truncate">{currentSong.title}</p>
-                <p className="text-xs text-spotify-lightgray truncate">{currentSong.artist}</p>
-              </div>
+            <div className="flex items-center gap-3 min-w-0">
+                <img src={currentSong.cover_url} className="w-10 h-10 rounded flex-shrink-0" alt={currentSong.title} />
+                <div className="min-w-0">
+                    <p className="font-semibold text-sm text-white break-all">{currentSong.title}</p>
+                    <p className="text-xs text-spotify-lightgray truncate">{currentSong.artist}</p>
+                </div>
             </div>
             <button onClick={onPlayPause} className="text-white p-2">
               {isPlaying ? (
@@ -103,21 +103,32 @@ function Player({
         {/* --- Tam Ekran Player --- */}
         {isPlayerExpanded && (
           <div className="h-full flex flex-col p-4">
-            <div className="flex-shrink-0 text-center">
-              <button onClick={handleToggleExpand} className="absolute top-4 left-2 p-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-white">
-                  <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
-                </svg>
-              </button>
-              <p className="text-sm font-bold text-spotify-lightgray">ÇALMA LİSTESİNDEN</p>
-              <h2 className="font-bold text-white">{currentSong.album?.title || 'Bilinmeyen Albüm'}</h2>
+            {/* Üst Kısım (Kaydırma burada çalışmaya devam edecek, çünkü parent'tan alıyor) */}
+            <div className="flex-1 flex flex-col">
+                <div className="flex-shrink-0 text-center">
+                  <button onClick={handleToggleExpand} className="absolute top-4 left-2 p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-white">
+                      <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                    </svg>
+                  </button>
+                  <p className="text-sm font-bold text-spotify-lightgray">ÇALMA LİSTESİNDEN</p>
+                  <h2 className="font-bold text-white truncate">{currentSong.album?.title || 'Bilinmeyen Albüm'}</h2>
+                </div>
+                <div className="flex-grow flex items-center justify-center my-4">
+                  <img src={currentSong.cover_url} className="w-full max-w-xs rounded-lg shadow-2xl aspect-square" alt={currentSong.title} />
+                </div>
             </div>
-            <div className="flex-grow flex items-center justify-center my-4">
-              <img src={currentSong.cover_url} className="w-full max-w-xs rounded-lg shadow-2xl aspect-square" alt={currentSong.title} />
-            </div>
-            <div className="flex-shrink-0">
+            
+            {/* ALT KISIM (KAYDIRMA BURADA ENGELLENECEK) */}
+            <div 
+              className="flex-shrink-0"
+              // Bu olaylar, useSwipeable hook'unun kullandığı olaylardır.
+              // Olayın üst katmana (kaydırma dinleyicisinin olduğu div'e) yayılmasını durduruyoruz.
+              onTouchStart={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
               <div className="mb-4">
-                <h2 className="text-2xl font-bold text-white truncate">{currentSong.title}</h2>
+                <h2 className="text-2xl font-bold text-white break-all">{currentSong.title}</h2>
                 <p className="text-md text-spotify-lightgray truncate">{currentSong.artist}</p>
               </div>
               {renderProgressBar()}
@@ -156,9 +167,9 @@ function Player({
       <footer className="hidden md:flex bg-spotify-lightdark p-4 items-center justify-between">
         <div className="w-1/3 flex items-center gap-3 min-w-0">
           <img src={currentSong.cover_url} className="w-14 h-14 rounded" alt={currentSong.title} />
-          <div className="truncate">
-            <p className="font-semibold text-sm text-white truncate">{currentSong.title}</p>
-            <p className="text-xs text-spotify-lightgray truncate">{currentSong.artist}</p>
+          <div className="min-w-0">
+              <p className="font-semibold text-sm text-white break-all">{currentSong.title}</p>
+              <p className="text-xs text-spotify-lightgray truncate">{currentSong.artist}</p>
           </div>
         </div>
         <div className="w-1/3 flex flex-col items-center gap-2">

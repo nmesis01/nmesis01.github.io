@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-function AlbumPage({ albums, onPlaySong, currentSong, onAddToQueue }) {
+// Bileşenin App.js'den gelen tüm propları aldığından emin olalım
+function AlbumPage({ albums, onPlaySong, currentSong, onAddToQueue, playlists, onAddSongToPlaylist ,openPlaylistModal}) {
   const [openMenuId, setOpenMenuId] = useState(null);
   const { albumId } = useParams();
   const album = albums.find(a => a.id.toString() === albumId);
@@ -11,8 +12,49 @@ function AlbumPage({ albums, onPlaySong, currentSong, onAddToQueue }) {
     return <div className="p-6 text-white">Yükleniyor...</div>;
   }
 
+  // Menüyü kapatma fonksiyonu
+  const closeAllMenus = () => {
+    setOpenMenuId(null);
+};
+
+  const handleMainMenuToggle = (e, songId) => {
+    e.stopPropagation();
+    setOpenMenuId(openMenuId === songId ? null : songId);
+  };
+
+  const handlePlaylistMenuToggle = (e, songId) => {
+    e.stopPropagation();
+  }
+
+  const handleAddSongToPlaylist = (playlistId, song) => {
+    onAddSongToPlaylist(playlistId, song);
+    closeAllMenus();
+  }
+
+  // Menüyü render eden fonksiyon (kodu tekrarlamamak için)
+const renderSongMenu = (song) => (
+    <div className="absolute bottom-8 right-0 bg-spotify-gray rounded-md shadow-lg z-10 w-48 text-left">
+        <ul>
+            <li>
+                <button onClick={() => { onAddToQueue(song); setOpenMenuId(null); }} className="w-full text-left px-4 py-2 text-sm text-spotify-lightgray hover:bg-spotify-lightdark/50">
+                    Sıraya Ekle
+                </button>
+            </li>
+            <li>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); openPlaylistModal(song); setOpenMenuId(null); }} 
+                  className="w-full text-left px-4 py-2 text-sm text-spotify-lightgray hover:bg-spotify-lightdark/50"
+                >
+                    Çalma Listesine Ekle
+                </button>
+            </li>
+            {/* PlaylistPage'deyseniz buraya "Listeden Çıkar" butonu da ekleyebilirsiniz */}
+        </ul>
+    </div>
+);
+
   return (
-    <div onClick={() => setOpenMenuId(null)}>
+    <div onClick={closeAllMenus} className='animate-fade-in'>
       <div className="flex flex-col md:flex-row items-center md:items-end gap-6 mb-8">
         <img src={album.cover_url} className="w-36 h-36 md:w-48 md:h-48 rounded-lg shadow-2xl flex-shrink-0" alt={album.title} />
         <div className="text-center md:text-left">
@@ -37,35 +79,26 @@ function AlbumPage({ albums, onPlaySong, currentSong, onAddToQueue }) {
         {album.songs && album.songs.map((song, index) => (
           <div key={song.id} className="group hover:bg-spotify-gray/50 rounded-md">
             
+            {/* --- Mobil Şarkı Satırı --- */}
             <div className="md:hidden flex items-center p-2">
-                <div className="flex-1 flex items-center gap-4 cursor-pointer" onClick={() => onPlaySong(song, album)}>
+                <div className="flex-1 flex items-center gap-4 cursor-pointer min-w-0" onClick={() => onPlaySong(song, album)}>
                     <span className="text-center w-5 text-spotify-lightgray">{index + 1}</span>
                     <img src={song.cover_url} className="w-10 h-10 rounded flex-shrink-0" alt={song.title} />
-                    <div className="flex-1 truncate">
-                        <p className={`truncate ${currentSong?.id === song.id ? 'text-spotify-green' : 'text-white'}`}>{song.title}</p>
+                    <div className="flex-1 min-w-0">
+                        <p className={`break-all ${currentSong?.id === song.id ? 'text-spotify-green' : 'text-white'}`}>{song.title}</p>
                         <p className="text-sm text-spotify-lightgray">{album.artist}</p>
                     </div>
                 </div>
                 <div className="relative flex-shrink-0">
-                    <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === song.id ? null : song.id); }} className="text-spotify-lightgray p-2 hover:text-white">
+                    <button onClick={(e) => handleMainMenuToggle(e, song.id)} className="text-spotify-lightgray p-2 hover:text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                     </button>
-                    {openMenuId === song.id && (
-                        <div className="absolute bottom-8 right-0 bg-spotify-gray rounded-md shadow-lg z-10 w-40">
-                            <ul>
-                                <li>
-                                    <button onClick={() => { onAddToQueue(song); setOpenMenuId(null); }} className="w-full text-left px-4 py-2 text-sm text-spotify-lightgray hover:bg-spotify-lightdark/50">
-                                        Sıraya Ekle
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-                    )}
+                    {openMenuId === song.id && renderSongMenu(song)}
                 </div>
             </div>
 
+            {/* --- Masaüstü Şarkı Satırı --- */}
             <div className="hidden md:grid grid-cols-[auto_1fr_1fr_auto] gap-4 px-4 py-2 items-center">
-                
                 <span 
                     className="text-center w-8 text-spotify-lightgray group-hover:text-white cursor-pointer"
                     onClick={() => onPlaySong(song, album)}
@@ -73,10 +106,10 @@ function AlbumPage({ albums, onPlaySong, currentSong, onAddToQueue }) {
                     {index + 1}
                 </span>
 
-                <div className="flex items-center gap-4 cursor-pointer" onClick={() => onPlaySong(song, album)}>
+                <div className="flex items-center gap-4 cursor-pointer min-w-0" onClick={() => onPlaySong(song, album)}>
                     <img src={song.cover_url} className="w-10 h-10 rounded flex-shrink-0" alt={song.title} />
-                    <div className="flex-1 truncate">
-                        <p className={`truncate ${currentSong?.id === song.id ? 'text-spotify-green' : 'text-white'}`}>{song.title}</p>
+                    <div className="flex-1 min-w-0">
+                        <p className={`break-all ${currentSong?.id === song.id ? 'text-spotify-green' : 'text-white'}`}>{song.title}</p>
                         <p className="text-sm text-spotify-lightgray">{album.artist}</p>
                     </div>
                 </div>
@@ -86,20 +119,10 @@ function AlbumPage({ albums, onPlaySong, currentSong, onAddToQueue }) {
                 </div>
 
                 <div className="relative flex-shrink-0">
-                    <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === song.id ? null : song.id); }} className="text-spotify-lightgray p-2 hover:text-white opacity-0 group-hover:opacity-100">
+                    <button onClick={(e) => handleMainMenuToggle(e, song.id)} className="text-spotify-lightgray p-2 hover:text-white opacity-0 group-hover:opacity-100">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                     </button>
-                    {openMenuId === song.id && (
-                        <div className="absolute bottom-8 right-0 bg-spotify-gray rounded-md shadow-lg z-10 w-40">
-                             <ul>
-                                <li>
-                                    <button onClick={() => { onAddToQueue(song); setOpenMenuId(null); }} className="w-full text-left px-4 py-2 text-sm text-spotify-lightgray hover:bg-spotify-lightdark/50">
-                                        Sıraya Ekle
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-                    )}
+                    {openMenuId === song.id && renderSongMenu(song)}
                 </div>
             </div>
           </div>

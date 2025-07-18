@@ -15,7 +15,7 @@ function HomePage({ albums, onAlbumSelect }) {
   };
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <h1 className="text-3xl font-bold mb-6">{getGreeting()}</h1>
             <h2 className="text-spotify-lightgray text-sm font-semibold mt-1 mb-6">Faşizme Ölüm Halklara Hürriyet</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
@@ -26,8 +26,10 @@ function HomePage({ albums, onAlbumSelect }) {
             onClick={() => onAlbumSelect(album.id)}
           >
             <img src={album.cover_url} alt={album.title} className="w-full h-auto rounded-md mb-4 shadow-lg aspect-square object-cover"/>
-            <h3 className="font-bold text-white truncate">{album.title}</h3>
-            <p className="text-sm text-spotify-lightgray truncate">{album.artist}</p>
+            <div className="flex flex-col h-16 justify-center">
+              <h3 className="font-bold text-white break-words">{album.title}</h3>
+              <p className="text-sm text-spotify-lightgray truncate">{album.artist}</p>
+            </div>
           </div>
         ))}
       </div>

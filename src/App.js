@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, useLayoutEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Player from './components/Player';
@@ -9,8 +9,13 @@ import QueuePage from './components/QueuePage';
 import Notification from './components/Notification';
 import BottomNav from './components/BottomNav';
 import NotFoundPage from './components/NotFoundPage';
+import LibraryPage from './components/LibraryPage';
+import PlaylistPage from './components/PlaylistPage';
+import PlaylistModal from './components/PlaylistModal'; 
+import AddSongToPlaylistModal from './components/AddSongToPlaylistModal';
 
 function App() {
+  const [playlistModalInfo, setPlaylistModalInfo] = useState({ isOpen: false, songToAdd: null }); // BU SATIRI EKLEYİN
   const [albums, setAlbums] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentQueue, setCurrentQueue] = useState(() => JSON.parse(localStorage.getItem('musicQueue')) || []);
@@ -25,15 +30,74 @@ function App() {
   const [playHistory, setPlayHistory] = useState([]);
   const [hasAudioFocus, setHasAudioFocus] = useState(true);
   const [userInteracted, setUserInteracted] = useState(false);
-
+  const [playlists, setPlaylists] = useState(() => JSON.parse(localStorage.getItem('userPlaylists')) || []);
+  const [isAddSongModalOpen, setAddSongModalOpen] = useState(false);
+  const [playlistIdToAddSong, setPlaylistIdToAddSong] = useState(null);
+  
   const audioRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const activePage = useMemo(() => location.pathname.split('/')[1] || 'home', [location.pathname]);
   const mainContentRef = useRef(null);
+  const scrollPositions = useRef({});
+  const scrollTimeout = useRef(null);
   const isIntentionalPause = useRef(false);
   const isTransitioning = useRef(false);
 
+  useEffect(() => {
+    localStorage.setItem('userPlaylists', JSON.stringify(playlists));
+  }, [playlists]);
+
+   const openAddSongModal = (playlistId) => {
+    setPlaylistIdToAddSong(playlistId);
+    setAddSongModalOpen(true);
+  };
+
+  const closeAddSongModal = () => {
+    setAddSongModalOpen(false);
+    setPlaylistIdToAddSong(null);
+  };
+
+  const handleSelectSongToAdd = (song) => {
+    if (playlistIdToAddSong) {
+      addSongToPlaylist(playlistIdToAddSong, song);
+    }
+    // Şarkı eklendikten sonra modal'ı hemen kapatmıyoruz,
+    // kullanıcı isterse birden fazla şarkı ekleyebilsin.
+  };
+  const createPlaylist = (name) => {
+      if (!name || name.trim() === '') {
+          showNotification('Lütfen geçerli bir isim girin.');
+          return;
+      }
+      const newPlaylist = {
+          id: `playlist_${Date.now()}`,
+          name: name.trim(),
+          songs: []
+      };
+      setPlaylists(prev => [...prev, newPlaylist]);
+      showNotification(`'${name.trim()}' oluşturuldu`);
+  };
+  const openPlaylistModal = (song) => {
+    setPlaylistModalInfo({ isOpen: true, songToAdd: song });
+  };
+
+  const closePlaylistModal = () => {
+    setPlaylistModalInfo({ isOpen: false, songToAdd: null });
+  };
+  const addSongToPlaylist = (playlistId, songToAdd) => {
+      setPlaylists(prev => prev.map(p => {
+          if (p.id === playlistId) {
+              if (p.songs.some(s => s.id === songToAdd.id)) {
+                  showNotification('Şarkı zaten listede.');
+                  return p;
+              }
+              showNotification(`'${p.name}' listesine eklendi.`);
+              return { ...p, songs: [...p.songs, songToAdd] };
+          }
+          return p;
+      }));
+  };
   useEffect(() => {
     let cancelled = false;
     const fetchAlbums = async () => {
@@ -50,12 +114,6 @@ function App() {
     return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => {
-    if (mainContentRef.current) {
-      mainContentRef.current.scrollTop = 0;
-    }
-  }, [location.pathname]);
-
   const allSongs = useMemo(
     () => albums.flatMap(album => album.songs ? album.songs.map(song => ({ ...song, album })) : []),
     [albums]
@@ -71,6 +129,27 @@ function App() {
     return () => clearTimeout(timeout);
   }, [notification]);
 
+  const deletePlaylist = (playlistIdToDelete, playlistName) => {
+  // Kullanıcıya silme işlemi için bir onay sorusu soruyoruz.
+  if (window.confirm(`'${playlistName}' listesini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
+    setPlaylists(prevPlaylists =>
+      prevPlaylists.filter(playlist => playlist.id !== playlistIdToDelete)
+    );
+    showNotification(`'${playlistName}' silindi.`);
+  }
+};
+  const removeSongFromPlaylist = (playlistId, songIdToRemove) => {
+    setPlaylists(prevPlaylists =>
+        prevPlaylists.map(playlist => {
+            if (playlist.id === playlistId) {
+                const updatedSongs = playlist.songs.filter(song => song.id !== songIdToRemove);
+                showNotification(`'${playlist.name}' listesinden kaldırıldı.`);
+                return { ...playlist, songs: updatedSongs };
+            }
+            return playlist;
+        })
+    );
+};
   const showNotification = useCallback((message) => {
     setNotification(message);
   }, []);
@@ -136,6 +215,12 @@ function App() {
     playNewSong({ ...song, source: 'system', album }, albumQueue);
   }, [playNewSong]);
 
+  const handlePlayFromPlaylist = useCallback((song, queue) => {
+    const fullSongData = allSongs.find(s => s.id === song.id) || song;
+    setPlayHistory([]);
+    playNewSong(fullSongData, queue.map(q => allSongs.find(s => s.id === q.id) || q));
+}, [playNewSong, allSongs]);
+
   const handlePlayFromRandom = useCallback((song) => {
     const randomQueue = allSongs.filter(s => s.id !== song.id).sort(() => 0.5 - Math.random()).slice(0, 5).map(s => ({ ...s, source: 'system' }));
     setPlayHistory([]);
@@ -184,7 +269,55 @@ function App() {
       setIsPlaying(prev => !prev);
     }
   }, [currentSong, isPlaying]);
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.target.tagName.toLowerCase() === 'input') {
+        return;
+      }
+      if (event.code === 'Space') {
+        event.preventDefault();
+        togglePlayPause();
+      }
+    };
 
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [togglePlayPause]);
+
+    useLayoutEffect(() => {
+      const mainEl = mainContentRef.current;
+      // Belirtilen sayfalardan biriyse kaydedilen pozisyonu yükle, değilse en başa git.
+      if (['/', '/search', '/queue'].includes(location.pathname)) {
+        if (mainEl) {
+          mainEl.scrollTop = scrollPositions.current[location.pathname] || 0;
+        }
+      } else {
+        // Diğer sayfalarda (örneğin Albüm sayfası) en başa git
+        if (mainEl) {
+          mainEl.scrollTop = 0;
+        }
+      }
+    }, [location.pathname]);
+// YENİ EKLENDİ: Kaydırma olayını dinleyip pozisyonu kaydet
+const handleScroll = useCallback(() => {
+  if (scrollTimeout.current) {
+    clearTimeout(scrollTimeout.current);
+  }
+
+  scrollTimeout.current = setTimeout(() => {
+    if (mainContentRef.current) {
+      const mainEl = mainContentRef.current;
+      const currentPath = location.pathname;
+
+      // Sadece belirtilen sayfalarda pozisyonu kaydet
+      if (['/', '/search', '/queue'].includes(currentPath)) {
+        scrollPositions.current[currentPath] = mainEl.scrollTop;
+      }
+    }
+  }, 150); // 150 milisaniyelik bir gecikmeyle kaydet
+}, [location.pathname]);
   const handleVolumeChange = useCallback((e) => setVolume(e.target.value), []);
   const handleToggleShuffle = useCallback(() => setIsShuffleOn(prev => !prev), []);
   const handleToggleRepeat = useCallback(() => {
@@ -298,16 +431,63 @@ function App() {
   return (
     <div className="bg-black h-screen w-screen text-white flex flex-col">
       <div className="flex-grow flex overflow-hidden">
-        <Sidebar onPageChange={handlePageChange} activePage={activePage} />
+        <Sidebar onPageChange={handlePageChange} activePage={activePage} playlists={playlists} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <main ref={mainContentRef} className="flex-1 overflow-y-auto bg-spotify-dark p-4 md:rounded-lg md:m-2 md:p-6 pb-40 md:pb-6">
-            <Routes>
-              <Route path="/" element={<HomePage albums={albums} onAlbumSelect={(id) => navigate(`/album/${id}`)} />} />
-              <Route path="/album/:albumId" element={<AlbumPage albums={albums} onPlaySong={handlePlayFromAlbum} currentSong={currentSong} onAddToQueue={handleAddToQueue} />} />
-              <Route path="/search" element={<SearchPage allSongs={allSongs} onPlaySong={handlePlayFromRandom} currentSong={currentSong} onAddToQueue={handleAddToQueue} />} />
-              <Route path="/queue" element={<QueuePage queue={displayQueue} currentSong={currentSong} onPlaySong={handlePlayFromQueue} />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
+          <main ref={mainContentRef} onScroll={handleScroll} className="flex-1 overflow-y-auto bg-spotify-dark p-4 md:rounded-lg md:m-2 md:p-6 pb-40 md:pb-6">
+          <Routes>
+            <Route path="/" element={<HomePage albums={albums} onAlbumSelect={(id) => navigate(`/album/${id}`)} />} />
+            
+            {/* AlbumPage'e proplar eklendi */}
+            <Route 
+              path="/album/:albumId" 
+              element={<AlbumPage 
+                          albums={albums} 
+                          onPlaySong={handlePlayFromAlbum} 
+                          currentSong={currentSong} 
+                          onAddToQueue={handleAddToQueue}
+                          playlists={playlists} 
+                          onAddSongToPlaylist={addSongToPlaylist} 
+                          openPlaylistModal={openPlaylistModal}
+                        />} 
+            />
+              <Route 
+  path="/playlist/:playlistId" 
+  element={<PlaylistPage 
+              playlists={playlists} 
+              onPlaySong={handlePlayFromPlaylist} 
+              currentSong={currentSong} 
+              onAddToQueue={handleAddToQueue}
+              onRemoveSongFromPlaylist={removeSongFromPlaylist} // Bu satırı ekleyin
+              openPlaylistModal={openPlaylistModal}
+              onOpenAddSongModal={openAddSongModal} // Bu satırı ekleyin
+            />} 
+/>
+
+            {/* SearchPage'e proplar eklendi */}
+            <Route 
+  path="/search" 
+  element={<SearchPage 
+              allSongs={allSongs} 
+              albums={albums} // Albümleri prop olarak ekleyin
+              onPlaySong={handlePlayFromRandom} 
+              currentSong={currentSong} 
+              onAddToQueue={handleAddToQueue}
+              openPlaylistModal={openPlaylistModal}
+              onAlbumSelect={(id) => navigate(`/album/${id}`)} // Albüme tıklama fonksiyonunu ekleyin
+            />} 
+/>
+
+            <Route path="/queue" element={<QueuePage queue={displayQueue} currentSong={currentSong} onPlaySong={handlePlayFromQueue} />} />
+<Route 
+  path="/library" 
+  element={<LibraryPage 
+              playlists={playlists} 
+              onCreatePlaylist={createPlaylist} 
+              onDeletePlaylist={deletePlaylist} // Bu satırı ekleyin
+            />} 
+/>            
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
           </main>
         </div>
       </div>
@@ -335,6 +515,19 @@ function App() {
       </div>
       <audio ref={audioRef} preload="auto" />
       <Notification message={notification} />
+      <PlaylistModal
+      isOpen={playlistModalInfo.isOpen}
+      onClose={closePlaylistModal}
+      songToAdd={playlistModalInfo.songToAdd}
+      playlists={playlists}
+      onAddSongToPlaylist={addSongToPlaylist}
+    />
+    <AddSongToPlaylistModal
+      isOpen={isAddSongModalOpen}
+      onClose={closeAddSongModal}
+      allSongs={allSongs}
+      onSongSelect={handleSelectSongToAdd}
+    />
     </div>
   );
 }

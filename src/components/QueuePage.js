@@ -5,7 +5,7 @@ function QueuePage({ queue, currentSong, onPlaySong }) {
   const displayQueue = currentIndex !== -1 ? queue.slice(currentIndex) : queue;
 
   return (
-    <div className="flex-grow bg-spotify-lightdark rounded-lg overflow-y-auto p-4 md:p-6">
+    <div className="flex-grow bg-spotify-lightdark rounded-lg overflow-y-auto p-4 md:p-6 animate-fade-in">
       <h1 className="text-3xl font-bold mb-6">Sıradakiler</h1>
       
       <div className="text-spotify-lightgray">
@@ -25,8 +25,8 @@ function QueuePage({ queue, currentSong, onPlaySong }) {
               >
                 <div className="md:hidden flex items-center gap-4 p-2">
                   <img src={song.cover_url} className="w-12 h-12 rounded flex-shrink-0" alt={song.title}/>
-                  <div className="flex-1 truncate">
-                    <p className={`truncate ${currentSong?.id === song.id ? 'text-spotify-green' : 'text-white'}`}>{song.title}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className={`break-all ${currentSong?.id === song.id ? 'text-spotify-green' : 'text-white'}`}>{song.title}</p>
                     <p className="text-sm truncate">{song.artist}</p>
                   </div>
                 </div>
