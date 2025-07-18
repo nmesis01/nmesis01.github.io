@@ -4,10 +4,8 @@
     <meta charset="utf-8">
     <title>Sayfa Yönlendiriliyor...</title>
     <script type="text/javascript">
-      // 404 sayfasından gelen yolu al ve sessionStorage'a kaydet.
       var path = window.location.pathname;
       sessionStorage.redirect = path;
-      // Ana sayfaya yönlendir.
       window.location.href = '/'; 
     </script>
   </head>
