@@ -103,7 +103,7 @@ function App() {
     const fetchAlbums = async () => {
       setLoading(true);
       try {
-        const response = await fetch('https://nodebackend-production-f8c4.up.railway.app/api/albums');
+        const response = await fetch('https://spotiyorum-bth5dva3cbd3dga2.polandcentral-01.azurewebsites.net/api/albums');
         if (!response.ok) throw new Error('Network response was not ok');
         const albumList = await response.json();
         if (!cancelled) setAlbums(albumList);
